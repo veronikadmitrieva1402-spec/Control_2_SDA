@@ -1,6 +1,7 @@
-from fastapi import FastAPI, Response, Cookie, HTTPException
+from fastapi import FastAPI, Response, Cookie, HTTPException, Header, Request
 from pydantic import BaseModel
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+from datetime import datetime
 import uuid
 import time
 
@@ -8,10 +9,12 @@ app = FastAPI()
 
 from models import UserCreate
 
+#3.1 
 @app.post("/create_user")
 async def create_user(user: UserCreate):
     return user
 
+#3.2
 products = [
     {"product_id": 123, "name": "Smartphone", "category": "Electronics", "price": 599.00},
     {"product_id": 456, "name": "Phone Case", "category": "Accessories", "price": 19.99},
@@ -40,7 +43,7 @@ async def search_products(
                 results.append(product)
     return results[:limit]
 
-#5.3 ЗАДАНИЕ
+#5.3
 
 class LoginData(BaseModel):
     username: str
@@ -148,4 +151,31 @@ async def get_profile(
         "message": "Profile information",
         "session_status": update_message,
         "time_since_last_activity": time_diff
+    }
+
+
+#5.4
+
+from models import CommonHeaders
+
+@app.get("/headers")
+async def get_headers(headers: CommonHeaders = Header(...)):
+    return {
+        "User-Agent": headers.user_agent,
+        "Accept-Language": headers.accept_language
+    }
+
+@app.get("/info")
+async def get_info(
+    headers: CommonHeaders = Header(...),
+    response: Response = None
+):
+    response.headers["X-Server-Time"] = datetime.now().isoformat()
+    
+    return {
+        "message": "Добро пожаловать! Ваши заголовки успешно обработаны.",
+        "headers": {
+            "User-Agent": headers.user_agent,
+            "Accept-Language": headers.accept_language
+        }
     }
